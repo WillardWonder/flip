@@ -134,9 +134,155 @@
     <button class="end-btn win-btn" id="win-retry">↻ Play Again</button>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="./assets/models/meshy-init.js"></script>
-<script src="./assets/models/jason.asset.js"></script>
-<script src="./src/game.js"></script>
+  <script>
+  // Tiny bootstrap: make the title button respond immediately, then load the heavy
+  // 3D engine/model scripts only after the player asks to continue. This avoids
+  // the "first click does nothing" feeling while GitHub Pages downloads/parses assets.
+  (function () {
+    const startBtn = document.getElementById('start-btn');
+    const titleEl = document.getElementById('title-screen');
+    const loadingEl = document.getElementById('loading');
+    const loadingText = loadingEl ? loadingEl.querySelector('.loading-text') : null;
+    const loadingBar = document.getElementById('loading-bar');
+    let bootPromise = null;
+
+    function setLoading(message, pct) {
+      if (loadingText && message) loadingText.textContent = message;
+      if (loadingBar) loadingBar.style.width = Math.max(0, Math.min(100, pct || 0)) + '%';
+      if (loadingEl) loadingEl.classList.add('show');
+    }
+
+    function showBootError(error) {
+      console.error(error);
+      setLoading('LOAD FAILED - CHECK BROWSER CONSOLE', 100);
+      if (loadingText) {
+        loadingText.style.color = '#ff5050';
+        loadingText.style.textShadow = '0 0 8px #ff2020';
+        loadingText.innerHTML = 'LOAD FAILED<br><span style="font-size:10px;letter-spacing:.16em;color:#c4a877">Refresh once. If it still fails, check that every folder uploaded to GitHub kept its exact name.</span>';
+      }
+      if (startBtn) {
+        startBtn.disabled = false;
+        startBtn.textContent = '↻ Retry Loading';
+      }
+      bootPromise = null;
+    }
+
+    function loadScript(src, label, timeoutMs) {
+      return new Promise((resolve, reject) => {
+        // If another click is already loading this script, reuse the same DOM node.
+        const existing = document.querySelector('script[data-correct-course-src="' + src + '"]');
+        if (existing && existing.dataset.loaded === '1') {
+          resolve();
+          return;
+        }
+        if (existing && existing.dataset.loading === '1') {
+          existing.addEventListener('load', () => resolve(), { once: true });
+          existing.addEventListener('error', () => reject(new Error('Could not load ' + label + ' from ' + src)), { once: true });
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = false;
+        script.dataset.correctCourseSrc = src;
+        script.dataset.loading = '1';
+        const timer = setTimeout(() => {
+          script.dataset.loading = '0';
+          script.dataset.loaded = '0';
+          if (script.parentNode) script.parentNode.removeChild(script);
+          reject(new Error('Timed out loading ' + label + ' from ' + src));
+        }, timeoutMs || 60000);
+        script.onload = () => {
+          clearTimeout(timer);
+          script.dataset.loading = '0';
+          script.dataset.loaded = '1';
+          resolve();
+        };
+        script.onerror = () => {
+          clearTimeout(timer);
+          script.dataset.loading = '0';
+          script.dataset.loaded = '0';
+          if (script.parentNode) script.parentNode.removeChild(script);
+          reject(new Error('Could not load ' + label + ' from ' + src));
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    async function loadThreeWithFallbacks() {
+      if (window.THREE) return;
+      const sources = [
+        'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+        'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js',
+        'https://unpkg.com/three@0.128.0/build/three.min.js'
+      ];
+      let lastError = null;
+      for (const src of sources) {
+        try {
+          await loadScript(src, 'Three.js', 45000);
+          if (window.THREE) return;
+        } catch (err) {
+          lastError = err;
+          console.warn(err);
+        }
+      }
+      throw lastError || new Error('Three.js did not initialize.');
+    }
+
+    async function bootGameAndShowRoster() {
+      if (window.__correctCourseGameReady && window.showCharacterSelect) {
+        loadingEl.classList.remove('show');
+        window.showCharacterSelect();
+        return;
+      }
+
+      if (!bootPromise) {
+        bootPromise = (async () => {
+          titleEl.style.display = 'none';
+          if (startBtn) {
+            startBtn.disabled = true;
+            startBtn.textContent = 'Loading...';
+          }
+
+          setLoading('LOADING THREE.JS...', 8);
+          await loadThreeWithFallbacks();
+
+          setLoading('OPENING MODEL REGISTRY...', 22);
+          await loadScript('./assets/models/meshy-init.js', 'Meshy registry', 30000);
+
+          // Load Jason before game.js so the Dean is still the real 3D Meshy model.
+          setLoading('LOADING DEAN JASON...', 42);
+          await loadScript('./assets/models/jason.asset.js', 'Dean Jason model', 60000);
+
+          setLoading('BOOTING CORRECT COURSE...', 68);
+          await loadScript('./src/game.js', 'game code', 60000);
+
+          setLoading('READY...', 100);
+          window.__correctCourseGameReady = true;
+        })();
+      }
+
+      await bootPromise;
+      if (startBtn) {
+        startBtn.disabled = false;
+        startBtn.textContent = '▶ Sneak To Class';
+      }
+      loadingEl.classList.remove('show');
+      if (window.showCharacterSelect) {
+        window.showCharacterSelect();
+      } else {
+        throw new Error('Game loaded, but showCharacterSelect was not exposed.');
+      }
+    }
+
+    if (startBtn) {
+      startBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        bootGameAndShowRoster().catch(showBootError);
+      }, true);
+    }
+  })();
+  </script>
 </body>
 </html>

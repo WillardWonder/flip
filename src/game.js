@@ -2269,6 +2269,10 @@
   }
 
   function startGame() {
+    // Guard against impatient double-clicks while model scripts are still loading.
+    if (gameState === 'loading') return;
+    gameState = 'loading';
+    if (csPlayBtn) csPlayBtn.disabled = true;
     titleEl.style.display = 'none';
     loadingEl.classList.add('show');
     const bar = document.getElementById('loading-bar');
@@ -2294,6 +2298,7 @@
         requestAnimationFrame(() => {
           loadingEl.classList.remove('show');
           hudEl.classList.add('show');
+          if (csPlayBtn) csPlayBtn.disabled = false;
           gameState = 'playing';
         });
       });
@@ -2538,3 +2543,10 @@
   camera.lookAt(0, 1, 0);
 
   animate();
+
+  // Expose these for the lightweight GitHub Pages bootstrap in index.html.
+  // The game still owns the real UI/gameplay logic; the bootstrap only decides
+  // when to load this heavier file.
+  window.showCharacterSelect = showCharacterSelect;
+  window.startGame = startGame;
+  window.__correctCourseGameReady = true;
