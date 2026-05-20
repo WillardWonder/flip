@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Correct Course</title>
+<link rel="stylesheet" href="./css/game.css">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <!-- TITLE SCREEN -->
+  <div id="title-screen">
+    <div class="title-wordmark">
+      <div class="title-eyebrow">NTC TIMBERWOLVES PRESENTS · FALL '26</div>
+      <div class="title-main">CORRECT<br><span class="accent">COURSE</span></div>
+      <div class="title-sub">— choose your NTC instructor · dodge the dean —</div>
+    </div>
+    <div class="title-poster">
+      <div class="title-bullets">
+        It's <b>8:52 AM</b>. Choose a <b>super amazing NTC instructor</b>. Class starts at <b>9:00</b>.<br>
+        <b>Dean Jason</b> is roaming the halls of <b>Northcentral Technical College</b>,
+        hunting faculty for their <b>annual FLIP review</b>.<br>
+        The documentation is not ready, and nobody has time for that meeting today.<br>
+        <b>Select your professor. Reach class. Stun him with paperwork. Avoid the FLIP.</b>
+      </div>
+      <button id="start-btn" class="start-btn">▶ Sneak To Class</button>
+      <div class="controls-row">
+        <span><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> Move</span>
+        <span><span class="key">SHIFT</span> Sprint</span>
+        <span><span class="key">SPACE</span> Throw Paperwork</span>
+        <span><span class="key">Q</span><span class="key">E</span> Turn Cam</span>
+        <span><span class="key">ESC</span> Pause</span>
+      </div>
+    </div>
+    <div class="credits">GO TIMBERWOLVES · WAUSAU, WI</div>
+  </div>
+
+  <!-- CHARACTER SELECT SCREEN — appears between title and loading -->
+  <div id="char-select-screen">
+    <div class="cs-header">
+      <div class="cs-eyebrow">— FACULTY ROSTER · CHOOSE YOUR PROFESSOR —</div>
+      <div class="cs-title">SELECT INSTRUCTOR</div>
+      <div class="cs-sub">All faculty have outstanding documentation. Pick your runner.</div>
+    </div>
+    <div class="cs-grid" id="cs-grid">
+      <!-- character cards injected at runtime from CHARACTERS data -->
+    </div>
+    <div class="cs-footer">
+      <button class="cs-back" id="cs-back-btn">← Back</button>
+      <button class="cs-play" id="cs-play-btn" disabled>▶ Sneak To Class</button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading">
+    <div class="loading-text">UNZIPPING BACKPACK…</div>
+    <div class="loading-bar-frame"><div class="loading-bar-fill" id="loading-bar"></div></div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-scanlines"></div>
+    <div class="hud-vignette"></div>
+    <div class="hud-room" id="hud-room">LOBBY</div>
+    <div class="hud-time" id="hud-time"><span class="small">BELL RINGS AT 9:00 AM</span><br>08:52 AM</div>
+    <div class="hud-info">
+      <div class="label">▸ NTC INSTRUCTOR</div>
+      Reach <span class="label" id="hud-info-room">ROOM 217</span>. Avoid <span class="label">DEAN JASON'S</span> sight cone. <span class="key">SHIFT</span> sprint, <span class="key">Q</span><span class="key">E</span> turn cam.
+    </div>
+    <div class="hud-pause-hint"><span class="key">ESC</span> pause</div>
+    <div class="hud-toast" id="hud-toast">ENTERED LOBBY</div>
+    <div class="hud-warning" id="hud-warning">⚠ DEAN SPOTTED YOU</div>
+    <div class="hud-dean-bark" id="hud-dean-bark">“STOP RIGHT THERE!”</div>
+
+    <!-- AMMO BAR — paperwork inventory + active type -->
+    <div class="hud-ammo" id="hud-ammo">
+      <div class="ammo-icon" id="ammo-icon">📋</div>
+      <div class="ammo-count">
+        <div class="ammo-num" id="ammo-num">0</div>
+        <div class="ammo-label" id="ammo-label">PAPERWORK</div>
+      </div>
+      <div class="ammo-throw"><span class="key">SPACE</span> THROW</div>
+    </div>
+    <!-- Floating pickup toast (above ammo bar) -->
+    <div class="hud-pickup" id="hud-pickup">+1 WORKDAY REQUEST</div>
+    <div class="hud-objective" id="hud-objective">
+      <span class="obj-icon">▸</span>
+      <span class="obj-text" id="hud-objective-text">Get to <b>ROOM 217</b> before 9:00 AM</span>
+    </div>
+  </div>
+
+  <!-- PAUSE -->
+  <div id="pause-screen">
+    <div class="pause-title">PAUSED</div>
+    <button class="pause-btn" id="resume-btn">▶ Resume</button>
+    <button class="pause-btn" id="restart-btn">↻ Restart</button>
+    <button class="pause-btn" id="title-btn">⌂ Title</button>
+  </div>
+
+  <!-- BUSTED (Dean caught you — annual FLIP review) -->
+  <div id="busted-screen" class="end-screen">
+    <div class="end-eyebrow">— ANNUAL REVIEW · CONFERENCE ROOM B —</div>
+    <div class="end-title busted-title">FLIP REVIEW</div>
+    <div class="end-subtitle">Faculty Level Identification Performance</div>
+    <div class="end-body" id="busted-body">
+      Dean Jason has cornered your chosen instructor.<br>
+      The annual FLIP review has begun. The documentation is not finished.<br>
+      <i>The next 90 minutes are going to feel like 90 years.</i>
+    </div>
+    <button class="end-btn busted-btn" id="busted-retry">↻ Try Again</button>
+  </div>
+
+  <!-- LATE (clock ran out) -->
+  <div id="late-screen" class="end-screen">
+    <div class="end-eyebrow">— THE BELL HAS RUNG —</div>
+    <div class="end-title late-title">LATE TO CLASS</div>
+    <div class="end-body" id="late-body">
+      It's 9:00 and your students are unsupervised.<br>
+      Your chosen instructor never made it to class.
+    </div>
+    <button class="end-btn late-btn" id="late-retry">↻ Try Again</button>
+  </div>
+
+  <!-- WIN (made it to class) -->
+  <div id="win-screen" class="end-screen">
+    <div class="end-eyebrow">— ROOM 217 · ON TIME —</div>
+    <div class="end-title win-title">CLASS IN SESSION</div>
+    <div class="end-body" id="win-body">
+      Your instructor slides into Room 217 with seconds to spare.<br>
+      The students rise. The Timberwolves salute their instructor.
+    </div>
+    <div class="win-howl">🐺 AWOOOOOOO 🐺</div>
+    <button class="end-btn win-btn" id="win-retry">↻ Play Again</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="./assets/models/meshy-init.js"></script>
+<script src="./assets/models/jason.asset.js"></script>
+<script src="./src/game.js"></script>
+</body>
+</html>
