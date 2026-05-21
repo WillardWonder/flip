@@ -2282,7 +2282,12 @@
     const selectedAssetId = selectedCharacter && selectedCharacter.modelAsset;
     const modelJobs = [];
     if (selectedAssetId) modelJobs.push(loadMeshyAssetScript(selectedAssetId));
-    modelJobs.push(loadMeshyAssetScript('jason'));
+
+    // Load Jason in the background only. If that big model is slow or blocked,
+    // gameplay should still start with the fallback dean instead of hanging.
+    loadMeshyAssetScript('jason').catch(err => {
+      console.warn('Dean Jason model prewarm skipped:', err);
+    });
 
     // Let the loading overlay paint first, then load the selected model asset
     // and perform the actual reset/model swap. If a model file fails, gameplay

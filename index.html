@@ -154,11 +154,12 @@
 
     function showBootError(error) {
       console.error(error);
+      const msg = (error && error.message) ? error.message : String(error || 'Unknown load error');
       setLoading('LOAD FAILED - CHECK BROWSER CONSOLE', 100);
       if (loadingText) {
         loadingText.style.color = '#ff5050';
         loadingText.style.textShadow = '0 0 8px #ff2020';
-        loadingText.innerHTML = 'LOAD FAILED<br><span style="font-size:10px;letter-spacing:.16em;color:#c4a877">Refresh once. If it still fails, check that every folder uploaded to GitHub kept its exact name.</span>';
+        loadingText.innerHTML = 'LOAD FAILED<br><span style="font-size:10px;letter-spacing:.10em;color:#c4a877">' + msg.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) + '</span>';
       }
       if (startBtn) {
         startBtn.disabled = false;
@@ -250,12 +251,17 @@
           setLoading('OPENING MODEL REGISTRY...', 22);
           await loadScript('./assets/models/meshy-init.js', 'Meshy registry', 30000);
 
-          // Load Jason before game.js so the Dean is still the real 3D Meshy model.
-          setLoading('LOADING DEAN JASON...', 42);
-          await loadScript('./assets/models/jason.asset.js', 'Dean Jason model', 60000);
+          // Do not block the first screen on Jason's large model file.
+          // The game will load Jason in the background and use the fallback dean if needed.
+          setLoading('BOOTING CORRECT COURSE...', 55);
+          await loadScript('./src/game.js', 'game code', 90000);
 
-          setLoading('BOOTING CORRECT COURSE...', 68);
-          await loadScript('./src/game.js', 'game code', 60000);
+          // Background prewarm only: failure here should never stop the roster.
+          if (!window.MESHY_MODELS || !window.MESHY_MODELS.jason) {
+            loadScript('./assets/models/jason.asset.js', 'Dean Jason model', 120000).catch((err) => {
+              console.warn('Dean Jason model will fall back this run:', err);
+            });
+          }
 
           setLoading('READY...', 100);
           window.__correctCourseGameReady = true;
