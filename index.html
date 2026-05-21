@@ -263,8 +263,10 @@
             });
           }
 
+          if (!window.__correctCourseGameReady || typeof window.showCharacterSelect !== 'function') {
+            throw new Error('Game code loaded but did not finish initialization. Open the browser console for the first JavaScript error.');
+          }
           setLoading('READY...', 100);
-          window.__correctCourseGameReady = true;
         })();
       }
 

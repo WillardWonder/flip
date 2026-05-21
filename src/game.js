@@ -2080,15 +2080,16 @@
   // GAME STATE
   // ============================================================
   let gameState = 'title'; // 'title' | 'loading' | 'playing' | 'paused' | 'busted' | 'late' | 'won'
-  const titleEl = document.getElementById('title-screen');
-  const loadingEl = document.getElementById('loading');
-  const hudEl = document.getElementById('hud');
-  const pauseEl = document.getElementById('pause-screen');
-  const bustedEl = document.getElementById('busted-screen');
-  const lateEl = document.getElementById('late-screen');
-  const winEl = document.getElementById('win-screen');
+  var titleEl = document.getElementById('title-screen');
+  var loadingEl = document.getElementById('loading');
+  var hudEl = document.getElementById('hud');
+  var pauseEl = document.getElementById('pause-screen');
+  var bustedEl = document.getElementById('busted-screen');
+  var lateEl = document.getElementById('late-screen');
+  var winEl = document.getElementById('win-screen');
 
-  document.getElementById('start-btn').addEventListener('click', showCharacterSelect);
+  // The title start button is handled by the lightweight bootstrap in index.html.
+  // Do not attach a second handler here, because it can fire before the game is fully initialized on slow GitHub Pages loads.
   document.getElementById('resume-btn').addEventListener('click', resumeGame);
   document.getElementById('title-btn').addEventListener('click', goToTitle);
   document.getElementById('restart-btn').addEventListener('click', restartGame);
@@ -2097,11 +2098,25 @@
   document.getElementById('win-retry').addEventListener('click', restartGame);
 
   // ─── Character select screen ────────────────────────────────
-  const charSelectEl = document.getElementById('char-select-screen');
-  const csGridEl     = document.getElementById('cs-grid');
-  const csBackBtn    = document.getElementById('cs-back-btn');
-  const csPlayBtn    = document.getElementById('cs-play-btn');
+  var charSelectEl = document.getElementById('char-select-screen');
+  var csGridEl     = document.getElementById('cs-grid');
+  var csBackBtn    = document.getElementById('cs-back-btn');
+  var csPlayBtn    = document.getElementById('cs-play-btn');
   let _csSelectedId  = null;
+
+  function ensureUiRefs() {
+    titleEl = titleEl || document.getElementById('title-screen');
+    loadingEl = loadingEl || document.getElementById('loading');
+    hudEl = hudEl || document.getElementById('hud');
+    pauseEl = pauseEl || document.getElementById('pause-screen');
+    bustedEl = bustedEl || document.getElementById('busted-screen');
+    lateEl = lateEl || document.getElementById('late-screen');
+    winEl = winEl || document.getElementById('win-screen');
+    charSelectEl = charSelectEl || document.getElementById('char-select-screen');
+    csGridEl = csGridEl || document.getElementById('cs-grid');
+    csBackBtn = csBackBtn || document.getElementById('cs-back-btn');
+    csPlayBtn = csPlayBtn || document.getElementById('cs-play-btn');
+  }
 
   // Build the selected character model during the roster screen when the browser
   // has a spare moment. This makes the Play button feel much faster without
@@ -2127,6 +2142,7 @@
 
 
   function buildCharacterCards() {
+    ensureUiRefs();
     csGridEl.innerHTML = '';
     for (const ch of CHARACTERS) {
       const card = document.createElement('div');
@@ -2148,6 +2164,7 @@
     }
   }
   function selectCard(id) {
+    ensureUiRefs();
     _csSelectedId = id;
     selectedCharacter = CHARACTERS.find(c => c.id === id) || CHARACTERS[0];
     // Highlight the chosen card
@@ -2160,21 +2177,23 @@
   }
 
   function showCharacterSelect() {
-    titleEl.style.display = 'none';
+    ensureUiRefs();
+    if (titleEl) titleEl.style.display = 'none';
     if (!csGridEl.children.length) buildCharacterCards();
-    charSelectEl.classList.add('show');
+    if (charSelectEl) charSelectEl.classList.add('show');
     // Default to first character so the Play button can light up if user just hits it
     selectCard(selectedCharacter.id);
   }
   function hideCharacterSelect() {
-    charSelectEl.classList.remove('show');
+    ensureUiRefs();
+    if (charSelectEl) charSelectEl.classList.remove('show');
   }
 
-  csBackBtn.addEventListener('click', () => {
+  if (csBackBtn) csBackBtn.addEventListener('click', () => {
     hideCharacterSelect();
-    titleEl.style.display = '';
+    if (titleEl) titleEl.style.display = '';
   });
-  csPlayBtn.addEventListener('click', () => {
+  if (csPlayBtn) csPlayBtn.addEventListener('click', () => {
     hideCharacterSelect();
     startGame();
   });
